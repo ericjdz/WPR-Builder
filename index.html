@@ -787,7 +787,8 @@ My notes:
         <div class="toolbar-bottom">
           <div class="toolbar-left">
             <button id="copySampleButton" class="ghost" type="button">Load example JSON</button>
-            <button id="formatJsonButton" class="secondary" type="button">Format</button>
+            <button id="formatJsonButton" class="ghost" type="button">Format</button>
+            <button id="loadJsonFormButton" class="secondary" type="button">Load into form ↓</button>
           </div>
           <div class="toolbar-right">
             <button id="generateButton" class="primary btn-large" type="button">
@@ -14168,6 +14169,7 @@ ABQAKgUAAO1QEQAAAA==`;
     addWeekButton.addEventListener("click", addWeek);
     formatJsonButton.addEventListener("click", formatJson);
     generateButton.addEventListener("click", generateDocument);
+    document.getElementById("loadJsonFormButton").addEventListener("click", loadJsonIntoForm);
 
     renderWeeksEditor();
     syncJsonFromState();
