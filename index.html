@@ -61,6 +61,9 @@
       margin: 32px auto 40px;
       position: relative;
       z-index: 1;
+      display: grid;
+      grid-template-rows: auto auto auto;
+      gap: 20px;
     }
 
     @supports (backdrop-filter: blur(16px)) {
@@ -73,14 +76,15 @@
     .hero {
       border-radius: var(--radius-xl);
       overflow: hidden;
-      padding: 64px 32px;
-      margin-bottom: 32px;
+      padding: 24px 36px;
+      margin-bottom: 0;
       position: relative;
-      text-align: center;
+      text-align: left;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+      gap: 32px;
       background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.6) 100%);
       border: 1px solid rgba(255,255,255,0.8);
       box-shadow: 0 40px 80px -20px rgba(18, 62, 124, 0.15), inset 0 0 0 1px rgba(255,255,255,0.5);
@@ -106,7 +110,8 @@
     }
 
     .hero-icon {
-      margin-bottom: 24px;
+      margin-bottom: 0;
+      flex-shrink: 0;
       width: 64px;
       height: 64px;
       background: linear-gradient(135deg, var(--accent-2), var(--accent));
@@ -116,6 +121,12 @@
       justify-content: center;
       box-shadow: 0 16px 32px -8px rgba(18, 62, 124, 0.4);
       color: white;
+    }
+
+    .hero-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
     }
 
     .eyebrow {
@@ -130,17 +141,16 @@
       font: 700 12px/1 'Plus Jakarta Sans', sans-serif;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
       position: relative;
     }
 
     h1, h2, h3, h4 { margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
 
     h1 {
-      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-size: clamp(1.6rem, 2.5vw, 2.4rem);
       font-weight: 800;
       line-height: 1.05;
-      max-width: 18ch;
       letter-spacing: -0.04em;
       color: var(--ink);
       background: linear-gradient(135deg, var(--ink) 0%, var(--accent) 100%);
@@ -149,11 +159,11 @@
     }
 
     .hero p {
-      margin: 20px auto 0;
-      max-width: 65ch;
+      margin: 0;
+      max-width: 46ch;
       color: var(--muted);
-      font-size: 1.125rem;
-      line-height: 1.7;
+      font-size: 0.95rem;
+      line-height: 1.6;
       font-weight: 400;
     }
 
@@ -488,9 +498,27 @@
     }
 
     @media (max-width: 1180px) {
-      .workspace, .hero { grid-template-columns: 1fr; }
       .json-card { position: static; }
       .fields-grid.top-level { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 900px) {
+      .bento-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 32px 24px;
+      }
+      .hero-left {
+        flex-direction: column;
+        text-align: center;
+      }
+      .hero p {
+        text-align: center;
+      }
     }
 
     .prompt-section { margin-bottom: 32px; }
@@ -500,7 +528,7 @@
       border-radius: var(--radius-xl);
       border: 1px solid var(--line);
       box-shadow: var(--shadow);
-      margin-bottom: 32px;
+      margin-bottom: 0;
       transition: all 0.3s ease;
       overflow: hidden;
     }
@@ -536,7 +564,14 @@
       padding-top: 32px;
     }
 
-    .step-section { margin-bottom: 32px; }
+    .step-section { margin-bottom: 0; }
+
+    .bento-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 20px;
+      align-items: start;
+    }
 
     .step-card {
       background: var(--panel-strong);
@@ -593,8 +628,8 @@
     .prompt-textarea {
       width: 100%;
       box-sizing: border-box;
-      min-height: 260px;
-      max-height: 420px;
+      min-height: 220px;
+      max-height: 360px;
       resize: vertical;
       font-family: 'JetBrains Mono', "SF Mono", "Fira Code", Consolas, monospace;
       font-size: 0.85rem;
@@ -638,16 +673,23 @@
 <body>
   <div class="shell">
     <section class="hero">
-      <div class="hero-icon">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      <div class="hero-left">
+        <div class="hero-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </div>
+        <div>
+          <div class="eyebrow">Template-driven DOCX generator</div>
+          <h1>Weekly Progress Report builder</h1>
+        </div>
       </div>
-      <div class="eyebrow">Template-driven DOCX generator</div>
-      <h1>Weekly Progress Report builder</h1>
-      <p>Generate Microsoft Word weekly progress reports by injecting your values into the original DOCX template XML. The template stays structurally intact, including headers and media, while the browser fills token placeholders and repacks the final <code>.docx</code>.</p>
+      <div class="hero-right">
+        <p>Generate Microsoft Word weekly progress reports by injecting your values into the original DOCX template XML. The template stays structurally intact, including headers and media, while the browser fills token placeholders and repacks the final <code>.docx</code>.</p>
+      </div>
     </section>
 
-    <section class="step-section">
-      <div class="step-card" data-step="01">
+    <div class="bento-grid">
+      <section class="step-section">
+        <div class="step-card" data-step="01">
         <div class="step-card-header">
           <div>
             <div class="eyebrow">Step 1</div>
@@ -741,7 +783,7 @@ My notes:
             <p class="panel-intro">Paste the JSON from your AI chat below. Then click Generate DOCX.</p>
           </div>
         </div>
-        <textarea id="jsonInput" class="json-textarea" style="min-height: 340px;" spellcheck="false" aria-label="Weekly progress report JSON"></textarea>
+        <textarea id="jsonInput" class="json-textarea" style="min-height: 280px;" spellcheck="false" aria-label="Weekly progress report JSON"></textarea>
         <div class="toolbar-bottom">
           <div class="toolbar-left">
             <button id="copySampleButton" class="ghost" type="button">Load example JSON</button>
@@ -757,6 +799,7 @@ My notes:
         <div id="status" class="status">Ready.</div>
       </div>
     </section>
+    </div>
 
     <section class="step-section">
       <details class="advanced-editor" open>
