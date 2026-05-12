@@ -1,0 +1,127 @@
+{
+  "weeks": [
+    {
+      "department": "Department of Computer Science",
+      "weekNumber": 1,
+      "internName": "Your Name",
+      "company": "Your Company",
+      "deptDeployed": "Assigned Department",
+      "supervisorName": "Supervisor Name",
+      "fromDate": "05/05/2026",
+      "toDate": "05/09/2026",
+      "hoursThisWeek": 40,
+      "totalHoursCompleted": 40,
+      "totalRequiredHours": 250,
+      "workSchedule": "8:00 AM - 5:00 PM",
+      "preparedDate": "05/09/2026",
+      "supervisorDate": "05/09/2026",
+      "days": [
+        {
+          "date": "05/05/26",
+          "timeIn": "8:00 AM",
+          "timeOut": "5:00 PM",
+          "hoursWorked": 8,
+          "tasks": [
+            {
+              "description": "Reviewed onboarding materials and confirmed weekly objectives.",
+              "hoursSpent": 2,
+              "status": "100%"
+            },
+            {
+              "description": "Set up the assigned workspace, tools, and access requests.",
+              "hoursSpent": 3,
+              "status": "100%"
+            },
+            {
+              "description": "Documented initial observations and open questions for the team.",
+              "hoursSpent": 2,
+              "status": "100%"
+            },
+            {
+              "description": "",
+              "hoursSpent": "",
+              "status": ""
+            }
+          ]
+        },
+        {
+          "date": "05/06/26",
+          "timeIn": "8:00 AM",
+          "timeOut": "5:00 PM",
+          "hoursWorked": 8,
+          "tasks": [
+            {
+              "description": "Organized reference files and updated the activity tracker.",
+              "hoursSpent": 2,
+              "status": "100%"
+            },
+            {
+              "description": "Prepared a draft summary of ongoing tasks for review.",
+              "hoursSpent": 2,
+              "status": "100%"
+            },
+            {
+              "description": "Supported routine documentation and formatting work.",
+              "hoursSpent": 2,
+              "status": "100%"
+            }
+          ]
+        },
+        {
+          "date": "05/07/26",
+          "timeIn": "8:00 AM",
+          "timeOut": "5:00 PM",
+          "hoursWorked": 8,
+          "tasks": [
+            {
+              "description": "Consolidated notes from stakeholder feedback.",
+              "hoursSpent": 3,
+              "status": "100%"
+            },
+            {
+              "description": "Updated logs and organized files for the next activity cycle.",
+              "hoursSpent": 3,
+              "status": "100%"
+            }
+          ]
+        },
+        {
+          "date": "05/08/26",
+          "timeIn": "8:00 AM",
+          "timeOut": "5:00 PM",
+          "hoursWorked": 8,
+          "tasks": [
+            {
+              "description": "Drafted a concise status summary for the week’s progress.",
+              "hoursSpent": 4,
+              "status": "100%"
+            },
+            {
+              "description": "Cleaned up records and verified completed outputs.",
+              "hoursSpent": 3,
+              "status": "100%"
+            },
+            {
+              "description": "Prepared items to continue in the following week.",
+              "hoursSpent": 1,
+              "status": "100%"
+            }
+          ]
+        },
+        {
+          "date": "05/09/26",
+          "timeIn": "8:00 AM",
+          "timeOut": "5:00 PM",
+          "hoursWorked": 8,
+          "tasks": [
+            {
+              "description": "Completed the weekly progress report and final review.",
+              "hoursSpent": 3,
+              "status": "100%"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

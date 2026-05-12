@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Progress Report Generator</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f2d5c'/%3E%3Cpath d='M9 7h10l4 4v14H9z' fill='%23fff'/%3E%3Cpath d='M19 7v4h4' fill='none' stroke='%230f2d5c' stroke-width='2'/%3E%3C/svg%3E" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6fb;
+      --panel: rgba(255, 255, 255, 0.92);
+      --panel-strong: #ffffff;
+      --ink: #17253d;
+      --muted: #61718b;
+      --line: rgba(25, 48, 88, 0.12);
+      --line-strong: rgba(25, 48, 88, 0.2);
+      --accent: #123e7c;
+      --accent-soft: #e9f0ff;
+      --accent-2: #2b69c9;
+      --success: #0f8b4c;
+      --danger: #b53737;
+      --danger-bg: #fff3f3;
+      --shadow: 0 30px 70px rgba(13, 35, 74, 0.12);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(43, 105, 201, 0.12), transparent 34%),
+        radial-gradient(circle at top right, rgba(18, 62, 124, 0.12), transparent 26%),
+        linear-gradient(180deg, #eef3fb 0%, var(--bg) 260px);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.36) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.36) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.4), transparent 78%);
+    }
+
+    .shell {
+      width: min(1500px, calc(100vw - 32px));
+      margin: 20px auto 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero,
+    .panel,
+    .week-card,
+    .day-card,
+    .task-card,
+    .status {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      border-radius: 28px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+      gap: 20px;
+      padding: 28px;
+      margin-bottom: 18px;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(18, 62, 124, 0.05), transparent 42%, rgba(43, 105, 201, 0.06));
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font: 700 12px/1 Arial, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { margin: 0; }
+
+    h1 {
+      font-size: clamp(2.2rem, 4vw, 3.6rem);
+      line-height: 0.98;
+      max-width: 10ch;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 14px 0 0;
+      max-width: 70ch;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.6;
+    }
+
+    .hero-aside {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric-card {
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(241,246,255,0.86));
+      border: 1px solid rgba(18, 62, 124, 0.12);
+    }
+
+    .metric-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font: 700 11px/1 Arial, sans-serif;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .metric-card span {
+      display: block;
+      font-size: 0.98rem;
+      line-height: 1.4;
+      color: var(--ink);
+    }
+
+    .meta-note {
+      padding: 16px;
+      border-radius: var(--radius-lg);
+      background: #0f2d5c;
+      color: #eff5ff;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(380px, 0.8fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border-radius: var(--radius-xl);
+      padding: 20px;
+    }
+
+    .panel-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .panel-header p,
+    .panel-intro,
+    .small-note,
+    .hint,
+    .legend,
+    .json-help {
+      margin: 0;
+      color: var(--muted);
+      font: 400 0.96rem/1.55 Arial, sans-serif;
+    }
+
+    .toolbar,
+    .toolbar-secondary,
+    .week-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font: 700 0.95rem/1 Arial, sans-serif;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .primary {
+      background: linear-gradient(180deg, var(--accent-2), var(--accent));
+      color: white;
+      box-shadow: 0 12px 24px rgba(18, 62, 124, 0.22);
+    }
+
+    .secondary {
+      background: var(--panel-strong);
+      color: var(--accent);
+      border-color: var(--line-strong);
+    }
+
+    .ghost {
+      background: #f8faff;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .danger {
+      background: #fff7f7;
+      color: var(--danger);
+      border-color: rgba(181, 55, 55, 0.2);
+    }
+
+    .status {
+      margin-top: 14px;
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      white-space: pre-wrap;
+      font: 400 0.94rem/1.55 Arial, sans-serif;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.85);
+    }
+
+    .status.success {
+      border-color: rgba(15, 139, 76, 0.2);
+      color: #0d6f3c;
+      background: rgba(241, 255, 247, 0.92);
+    }
+
+    .status.error {
+      border-color: rgba(181, 55, 55, 0.2);
+      color: var(--danger);
+      background: var(--danger-bg);
+    }
+
+    .weeks-stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .week-card,
+    .day-card,
+    .task-card {
+      border-radius: var(--radius-lg);
+      padding: 18px;
+    }
+
+    .week-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(244,248,255,0.88));
+    }
+
+    .week-card-header,
+    .day-card-header,
+    .task-card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 7px 12px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font: 700 12px/1 Arial, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .fields-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .fields-grid.top-level {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label,
+    .task-grid header,
+    .day-meta-label {
+      color: var(--muted);
+      font: 700 12px/1 Arial, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--line-strong);
+      background: rgba(255,255,255,0.98);
+      color: var(--ink);
+      padding: 12px 13px;
+      font: 400 0.97rem/1.35 Arial, sans-serif;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    textarea { resize: vertical; }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: rgba(43, 105, 201, 0.7);
+      box-shadow: 0 0 0 4px rgba(43, 105, 201, 0.12);
+    }
+
+    .json-textarea {
+      min-height: 760px;
+      font: 400 0.85rem/1.55 Consolas, "Courier New", monospace;
+      background: #fbfcff;
+    }
+
+    .json-card {
+      position: sticky;
+      top: 16px;
+    }
+
+    .json-help {
+      margin-bottom: 14px;
+    }
+
+    .day-meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .task-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .task-card {
+      padding: 14px;
+      background: rgba(255,255,255,0.86);
+      box-shadow: none;
+    }
+
+    .task-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) 120px 150px;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .legend {
+      margin-top: 12px;
+    }
+
+    .list {
+      margin: 14px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font: 400 0.95rem/1.6 Arial, sans-serif;
+    }
+
+    .list li + li { margin-top: 6px; }
+
+    .empty-note {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px dashed var(--line-strong);
+      color: var(--muted);
+      font: 400 0.95rem/1.5 Arial, sans-serif;
+      background: rgba(255,255,255,0.65);
+    }
+
+    @media (max-width: 1180px) {
+      .workspace,
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .json-card {
+        position: static;
+      }
+
+      .fields-grid.top-level {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 860px) {
+      .fields-grid,
+      .fields-grid.top-level,
+      .day-meta,
+      .task-grid,
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .shell {
+        width: min(100vw - 18px, 1500px);
+      }
+
+      .hero,
+      .panel,
+      .week-card,
+      .day-card,
+      .task-card {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Template-driven DOCX generator</div>
+        <h1>Weekly Progress Report builder</h1>
+        <p>Generate Microsoft Word weekly progress reports by injecting your values into the original DOCX template XML. The template stays structurally intact, including headers and media, while the browser fills token placeholders and repacks the final <code>.docx</code>.</p>
+      </div>
+      <div class="hero-aside">
+        <div class="metric-grid">
+          <div class="metric-card">
+            <strong>Template</strong>
+            <span>Embedded base64 DOCX, no fetch required</span>
+          </div>
+          <div class="metric-card">
+            <strong>Engine</strong>
+            <span>JSZip + direct XML token substitution</span>
+          </div>
+          <div class="metric-card">
+            <strong>Layout</strong>
+            <span>Original form preserved, 5 days × 3 tasks</span>
+          </div>
+          <div class="metric-card">
+            <strong>Input</strong>
+            <span>Form editor and raw JSON textarea</span>
+          </div>
+        </div>
+        <div class="meta-note">Multi-week reports reuse the same template body and insert a page break between generated weeks before the final DOCX download.</div>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Form editor</h2>
+            <p class="panel-intro">Edit one or more weeks visually. Every week always renders 5 day groups with 3 task rows per day in the template.</p>
+          </div>
+          <div class="toolbar">
+            <button id="copySampleButton" class="secondary" type="button">Load sample</button>
+            <button id="addWeekButton" class="ghost" type="button">Add week</button>
+            <button id="syncJsonButton" class="ghost" type="button">Sync form → JSON</button>
+            <button id="generateButton" class="primary" type="button">Generate DOCX</button>
+          </div>
+        </div>
+
+        <div id="weeksEditor" class="weeks-stack"></div>
+        <div id="status" class="status">Ready.</div>
+      </div>
+
+      <aside class="panel json-card">
+        <div class="panel-header">
+          <div>
+            <h2>JSON input</h2>
+            <p class="json-help">Paste JSON directly, validate it, then load it back into the form or generate the DOCX from the textarea.</p>
+          </div>
+          <div class="toolbar-secondary">
+            <button id="loadJsonButton" class="secondary" type="button">Load JSON → Form</button>
+            <button id="formatJsonButton" class="ghost" type="button">Format</button>
+            <button id="validateButton" class="ghost" type="button">Validate</button>
+          </div>
+        </div>
+        <textarea id="jsonInput" class="json-textarea" spellcheck="false" aria-label="Weekly progress report JSON"></textarea>
+        <p class="legend">Required week fields: department, weekNumber, internName, company, deptDeployed, supervisorName, fromDate, toDate, hoursThisWeek, totalHoursCompleted, totalRequiredHours, workSchedule, preparedDate, supervisorDate. Empty task rows are allowed.</p>
+        <ul class="list">
+          <li>Each week is normalized to exactly 5 days.</li>
+          <li>Each day is normalized to exactly 3 task rows.</li>
+          <li>Special XML characters are escaped before token injection.</li>
+          <li>Generation fails fast if required fields are missing.</li>
+        </ul>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    const TEMPLATE_DOCX_BASE64 = `__TEMPLATE_DOCX_BASE64__`;
+
+    const sampleData = {
+      weeks: [
+        {
+          department: "Department of Information Systems",
+          weekNumber: 1,
+          internName: "Your Name",
+          company: "Your Company",
+          deptDeployed: "Systems Support Unit",
+          supervisorName: "Supervisor Name",
+          fromDate: "05/19/2026",
+          toDate: "05/23/2026",
+          hoursThisWeek: 40,
+          totalHoursCompleted: 40,
+          totalRequiredHours: 250,
+          workSchedule: "8:00 AM - 5:00 PM",
+          preparedDate: "05/23/2026",
+          supervisorDate: "05/23/2026",
+          days: [
+            {
+              date: "05/19/26",
+              timeIn: "8:00 AM",
+              timeOut: "5:00 PM",
+              hoursWorked: 8,
+              tasks: [
+                { description: "Organized support tickets and classified recurring issues.", hoursSpent: 3, status: "100%" },
+                { description: "Updated shared documentation for resolved concerns.", hoursSpent: 3, status: "100%" },
+                { description: "Joined a team huddle and listed next actions.", hoursSpent: 2, status: "100%" }
+              ]
+            },
+            {
+              date: "05/20/26",
+              timeIn: "8:00 AM",
+              timeOut: "5:00 PM",
+              hoursWorked: 8,
+              tasks: [
+                { description: "Reviewed request logs and prepared summaries.", hoursSpent: 4, status: "100%" },
+                { description: "Assisted with routine records cleanup.", hoursSpent: 4, status: "100%" },
+                { description: "", hoursSpent: "", status: "" }
+              ]
+            },
+            {
+              date: "05/21/26",
+              timeIn: "8:00 AM",
+              timeOut: "5:00 PM",
+              hoursWorked: 8,
+              tasks: [
+                { description: "Tracked follow-up requests and consolidated open items.", hoursSpent: 3, status: "100%" },
+                { description: "Prepared a concise midweek update for review.", hoursSpent: 3, status: "100%" },
+                { description: "Filed completed outputs for the next handoff.", hoursSpent: 2, status: "100%" }
+              ]
+            },
+            {
+              date: "05/22/26",
+              timeIn: "8:00 AM",
+              timeOut: "5:00 PM",
+              hoursWorked: 8,
+              tasks: [
+                { description: "Validated records and corrected formatting issues.", hoursSpent: 4, status: "100%" },
+                { description: "Compiled references for the weekly report.", hoursSpent: 2, status: "100%" },
+                { description: "Prepared remaining action items for Friday.", hoursSpent: 2, status: "100%" }
+              ]
+            },
+            {
+              date: "05/23/26",
+              timeIn: "8:00 AM",
+              timeOut: "5:00 PM",
+              hoursWorked: 8,
+              tasks: [
+                { description: "Finalized the weekly progress report and reviewed totals.", hoursSpent: 3, status: "100%" },
+                { description: "Submitted the updated summary to the supervisor.", hoursSpent: 3, status: "100%" },
+                { description: "Organized source notes for the next reporting week.", hoursSpent: 2, status: "100%" }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    const REQUIRED_WEEK_FIELDS = [
+      "department",
+      "weekNumber",
+      "internName",
+      "company",
+      "deptDeployed",
+      "supervisorName",
+      "fromDate",
+      "toDate",
+      "hoursThisWeek",
+      "totalHoursCompleted",
+      "totalRequiredHours",
+      "workSchedule",
+      "preparedDate",
+      "supervisorDate"
+    ];
+
+    const jsonInput = document.getElementById("jsonInput");
+    const status = document.getElementById("status");
+    const weeksEditor = document.getElementById("weeksEditor");
+    const copySampleButton = document.getElementById("copySampleButton");
+    const addWeekButton = document.getElementById("addWeekButton");
+    const syncJsonButton = document.getElementById("syncJsonButton");
+    const loadJsonButton = document.getElementById("loadJsonButton");
+    const formatJsonButton = document.getElementById("formatJsonButton");
+    const validateButton = document.getElementById("validateButton");
+    const generateButton = document.getElementById("generateButton");
+
+    let state = normalizeRoot(sampleData);
+
+    function deepClone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function createBlankTask() {
+      return { description: "", hoursSpent: "", status: "" };
+    }
+
+    function createBlankDay(dayNumber) {
+      return {
+        date: "",
+        timeIn: "",
+        timeOut: "",
+        hoursWorked: "",
+        tasks: Array.from({ length: 3 }, () => createBlankTask()),
+        dayNumber
+      };
+    }
+
+    function createBlankWeek(weekNumber) {
+      return {
+        department: "",
+        weekNumber,
+        internName: "",
+        company: "",
+        deptDeployed: "",
+        supervisorName: "",
+        fromDate: "",
+        toDate: "",
+        hoursThisWeek: "",
+        totalHoursCompleted: "",
+        totalRequiredHours: 250,
+        workSchedule: "",
+        preparedDate: "",
+        supervisorDate: "",
+        days: Array.from({ length: 5 }, (_, index) => createBlankDay(index + 1))
+      };
+    }
+
+    function valueOrEmpty(value) {
+      return value === undefined || value === null ? "" : value;
+    }
+
+    function normalizeTask(task) {
+      return {
+        description: String(valueOrEmpty(task?.description)),
+        hoursSpent: valueOrEmpty(task?.hoursSpent),
+        status: String(valueOrEmpty(task?.status))
+      };
+    }
+
+    function normalizeDay(day, dayNumber) {
+      const tasks = Array.isArray(day?.tasks) ? day.tasks.slice(0, 3).map(normalizeTask) : [];
+      while (tasks.length < 3) tasks.push(createBlankTask());
+      return {
+        date: String(valueOrEmpty(day?.date)),
+        timeIn: String(valueOrEmpty(day?.timeIn)),
+        timeOut: String(valueOrEmpty(day?.timeOut)),
+        hoursWorked: valueOrEmpty(day?.hoursWorked),
+        tasks,
+        dayNumber
+      };
+    }
+
+    function normalizeWeek(week, index) {
+      const normalized = createBlankWeek(index + 1);
+      const merged = {
+        ...normalized,
+        ...week,
+        weekNumber: valueOrEmpty(week?.weekNumber) === "" ? index + 1 : week.weekNumber
+      };
+      const days = Array.isArray(week?.days) ? week.days.slice(0, 5).map((day, dayIndex) => normalizeDay(day, dayIndex + 1)) : [];
+      while (days.length < 5) days.push(createBlankDay(days.length + 1));
+      merged.days = days;
+      return merged;
+    }
+
+    function normalizeRoot(root) {
+      const weeks = Array.isArray(root?.weeks) && root.weeks.length ? root.weeks.map((week, index) => normalizeWeek(week, index)) : [createBlankWeek(1)];
+      return { weeks };
+    }
+
+    function isBlank(value) {
+      return value === "" || value === null || value === undefined;
+    }
+
+    function isFilled(value) {
+      return !isBlank(value) && String(value).trim() !== "";
+    }
+
+    function validateData(root) {
+      const errors = [];
+      if (!root || !Array.isArray(root.weeks) || root.weeks.length === 0) {
+        errors.push("At least one week is required.");
+        return errors;
+      }
+
+      root.weeks.forEach((week, weekIndex) => {
+        const weekLabel = `Week ${weekIndex + 1}`;
+        REQUIRED_WEEK_FIELDS.forEach((field) => {
+          if (!isFilled(week[field])) {
+            errors.push(`${weekLabel}: ${field} is required.`);
+          }
+        });
+
+        if (!Array.isArray(week.days)) {
+          errors.push(`${weekLabel}: days must be an array.`);
+          return;
+        }
+
+        week.days.forEach((day, dayIndex) => {
+          const hasAnyDayContent = [day.date, day.timeIn, day.timeOut, day.hoursWorked].some(isFilled) || (Array.isArray(day.tasks) && day.tasks.some((task) => [task.description, task.hoursSpent, task.status].some(isFilled)));
+          if (hasAnyDayContent) {
+            ["date", "timeIn", "timeOut", "hoursWorked"].forEach((field) => {
+              if (!isFilled(day[field])) {
+                errors.push(`${weekLabel}, Day ${dayIndex + 1}: ${field} is required when the day contains data.`);
+              }
+            });
+          }
+
+          (day.tasks || []).forEach((task, taskIndex) => {
+            const hasTaskContent = [task.description, task.hoursSpent, task.status].some(isFilled);
+            if (hasTaskContent) {
+              ["description", "hoursSpent", "status"].forEach((field) => {
+                if (!isFilled(task[field])) {
+                  errors.push(`${weekLabel}, Day ${dayIndex + 1}, Task ${taskIndex + 1}: ${field} is required when the task row contains data.`);
+                }
+              });
+            }
+          });
+        });
+      });
+
+      return errors;
+    }
+
+    function escapeHtml(value) {
+      return String(valueOrEmpty(value))
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderWeeksEditor() {
+      if (!state.weeks.length) {
+        weeksEditor.innerHTML = '<div class="empty-note">No weeks available. Add a week to begin.</div>';
+        return;
+      }
+
+      weeksEditor.innerHTML = state.weeks.map((week, weekIndex) => {
+        const dayCards = week.days.map((day, dayIndex) => {
+          const taskCards = day.tasks.map((task, taskIndex) => `
+            <div class="task-card">
+              <div class="task-card-header">
+                <h4>Task ${taskIndex + 1}</h4>
+                <span class="badge">Day ${dayIndex + 1}</span>
+              </div>
+              <div class="task-grid">
+                <div class="field">
+                  <label for="week-${weekIndex}-day-${dayIndex}-task-${taskIndex}-description">Description</label>
+                  <textarea id="week-${weekIndex}-day-${dayIndex}-task-${taskIndex}-description" rows="3" data-scope="task" data-week-index="${weekIndex}" data-day-index="${dayIndex}" data-task-index="${taskIndex}" data-field="description">${escapeHtml(task.description)}</textarea>
+                </div>
+                <div class="field">
+                  <label for="week-${weekIndex}-day-${dayIndex}-task-${taskIndex}-hoursSpent">Hours spent</label>
+                  <input id="week-${weekIndex}-day-${dayIndex}-task-${taskIndex}-hoursSpent" type="text" value="${escapeHtml(task.hoursSpent)}" data-scope="task" data-week-index="${weekIndex}" data-day-index="${dayIndex}" data-task-index="${taskIndex}" data-field="hoursSpent" />
+                </div>
+                <div class="field">
+                  <label for="week-${weekIndex}-day-${dayIndex}-task-${taskIndex}-status">Status</label>
+                  <input id="week-${weekIndex}-day-${dayIndex}-task-${taskIndex}-status" type="text" value="${escapeHtml(task.status)}" data-scope="task" data-week-index="${weekIndex}" data-day-index="${dayIndex}" data-task-index="${taskIndex}" data-field="status" />
+                </div>
+              </div>
+            </div>
+          `).join("");
+
+          return `
+            <div class="day-card">
+              <div class="day-card-header">
+                <div>
+                  <span class="badge">Day ${dayIndex + 1}</span>
+                </div>
+                <p class="small-note">Blank rows stay blank in the template.</p>
+              </div>
+              <div class="day-meta">
+                <div class="field">
+                  <label for="week-${weekIndex}-day-${dayIndex}-date">Date</label>
+                  <input id="week-${weekIndex}-day-${dayIndex}-date" type="text" value="${escapeHtml(day.date)}" placeholder="MM/DD/YY" data-scope="day" data-week-index="${weekIndex}" data-day-index="${dayIndex}" data-field="date" />
+                </div>
+                <div class="field">
+                  <label for="week-${weekIndex}-day-${dayIndex}-timeIn">Time in</label>
+                  <input id="week-${weekIndex}-day-${dayIndex}-timeIn" type="text" value="${escapeHtml(day.timeIn)}" placeholder="7:00 AM" data-scope="day" data-week-index="${weekIndex}" data-day-index="${dayIndex}" data-field="timeIn" />
+                </div>
+                <div class="field">
+                  <label for="week-${weekIndex}-day-${dayIndex}-timeOut">Time out</label>
+                  <input id="week-${weekIndex}-day-${dayIndex}-timeOut" type="text" value="${escapeHtml(day.timeOut)}" placeholder="5:00 PM" data-scope="day" data-week-index="${weekIndex}" data-day-index="${dayIndex}" data-field="timeOut" />
+                </div>
+                <div class="field">
+                  <label for="week-${weekIndex}-day-${dayIndex}-hoursWorked">Hours worked</label>
+                  <input id="week-${weekIndex}-day-${dayIndex}-hoursWorked" type="text" value="${escapeHtml(day.hoursWorked)}" placeholder="8" data-scope="day" data-week-index="${weekIndex}" data-day-index="${dayIndex}" data-field="hoursWorked" />
+                </div>
+              </div>
+              <div class="task-stack">${taskCards}</div>
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <section class="week-card">
+            <div class="week-card-header">
+              <div>
+                <span class="badge">Week ${weekIndex + 1}</span>
+                <h3 style="margin-top:10px;">Weekly report details</h3>
+              </div>
+              <div class="week-actions">
+                <button class="danger remove-week-button" type="button" data-week-index="${weekIndex}" ${state.weeks.length === 1 ? "disabled" : ""}>Remove week</button>
+              </div>
+            </div>
+            <div class="fields-grid top-level">
+              ${renderWeekField(weekIndex, "department", "Department")}
+              ${renderWeekField(weekIndex, "weekNumber", "Week number")}
+              ${renderWeekField(weekIndex, "internName", "Intern name")}
+              ${renderWeekField(weekIndex, "company", "Company")}
+              ${renderWeekField(weekIndex, "deptDeployed", "Department deployed")}
+              ${renderWeekField(weekIndex, "supervisorName", "Supervisor name")}
+              ${renderWeekField(weekIndex, "fromDate", "From date")}
+              ${renderWeekField(weekIndex, "toDate", "To date")}
+              ${renderWeekField(weekIndex, "hoursThisWeek", "Hours this week")}
+              ${renderWeekField(weekIndex, "totalHoursCompleted", "Total hours completed")}
+              ${renderWeekField(weekIndex, "totalRequiredHours", "Total required hours")}
+              ${renderWeekField(weekIndex, "workSchedule", "Work schedule")}
+              ${renderWeekField(weekIndex, "preparedDate", "Prepared date")}
+              ${renderWeekField(weekIndex, "supervisorDate", "Supervisor date")}
+            </div>
+            <div class="weeks-stack" style="margin-top:16px;">${dayCards}</div>
+          </section>
+        `;
+      }).join("");
+    }
+
+    function renderWeekField(weekIndex, field, label) {
+      const value = escapeHtml(state.weeks[weekIndex][field]);
+      return `
+        <div class="field">
+          <label for="week-${weekIndex}-${field}">${label}</label>
+          <input id="week-${weekIndex}-${field}" type="text" value="${value}" data-scope="week" data-week-index="${weekIndex}" data-field="${field}" />
+        </div>
+      `;
+    }
+
+    function syncJsonFromState() {
+      jsonInput.value = JSON.stringify(state, null, 2);
+    }
+
+    function setStatus(message, type = "") {
+      status.textContent = message;
+      status.className = `status${type ? ` ${type}` : ""}`;
+    }
+
+    function updateStateFromInput(target) {
+      const { scope, field } = target.dataset;
+      const weekIndex = Number(target.dataset.weekIndex);
+      const dayIndex = Number(target.dataset.dayIndex);
+      const taskIndex = Number(target.dataset.taskIndex);
+      const value = target.value;
+
+      if (scope === "week") {
+        state.weeks[weekIndex][field] = value;
+      } else if (scope === "day") {
+        state.weeks[weekIndex].days[dayIndex][field] = value;
+      } else if (scope === "task") {
+        state.weeks[weekIndex].days[dayIndex].tasks[taskIndex][field] = value;
+      }
+
+      syncJsonFromState();
+    }
+
+    function loadSample() {
+      state = normalizeRoot(deepClone(sampleData));
+      renderWeeksEditor();
+      syncJsonFromState();
+      setStatus("Sample data loaded into the form and JSON editor.", "success");
+    }
+
+    function addWeek() {
+      state.weeks.push(createBlankWeek(state.weeks.length + 1));
+      renderWeeksEditor();
+      syncJsonFromState();
+      setStatus(`Week ${state.weeks.length} added.`, "success");
+    }
+
+    function removeWeek(index) {
+      if (state.weeks.length === 1) {
+        setStatus("At least one week must remain.", "error");
+        return;
+      }
+      state.weeks.splice(index, 1);
+      state.weeks = state.weeks.map((week, weekIndex) => normalizeWeek(week, weekIndex));
+      renderWeeksEditor();
+      syncJsonFromState();
+      setStatus(`Removed week ${index + 1}.`, "success");
+    }
+
+    function parseJsonInput() {
+      const parsed = JSON.parse(jsonInput.value);
+      return normalizeRoot(parsed);
+    }
+
+    function loadJsonIntoForm() {
+      try {
+        state = parseJsonInput();
+        renderWeeksEditor();
+        syncJsonFromState();
+        setStatus("JSON loaded into the form editor.", "success");
+      } catch (error) {
+        setStatus(`Unable to load JSON into form.\n${error.message}`, "error");
+      }
+    }
+
+    function formatJson() {
+      try {
+        const parsed = parseJsonInput();
+        jsonInput.value = JSON.stringify(parsed, null, 2);
+        setStatus("JSON formatted successfully.", "success");
+      } catch (error) {
+        setStatus(`Unable to format JSON.\n${error.message}`, "error");
+      }
+    }
+
+    function validateJson(showSuccess = true) {
+      try {
+        const parsed = parseJsonInput();
+        const errors = validateData(parsed);
+        if (errors.length) {
+          setStatus(`Validation failed:\n- ${errors.join("\n- ")}`, "error");
+          return null;
+        }
+        if (showSuccess) {
+          setStatus(`Validation passed for ${parsed.weeks.length} week(s).`, "success");
+        }
+        return parsed;
+      } catch (error) {
+        setStatus(`Invalid JSON.\n${error.message}`, "error");
+        return null;
+      }
+    }
+
+    function xmlEscape(value) {
+      return String(valueOrEmpty(value))
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    function normalizeForGeneration(data) {
+      return normalizeRoot(data);
+    }
+
+    function buildTokenMap(week) {
+      const weekData = normalizeWeek(week, Number(week.weekNumber || 1) - 1);
+      const tokens = {
+        DEPARTMENT: weekData.department,
+        WEEK_NUMBER: weekData.weekNumber,
+        WORK_SCHEDULE: weekData.workSchedule,
+        INTERN_NAME: weekData.internName,
+        FROM_DATE: weekData.fromDate,
+        COMPANY: weekData.company,
+        TO_DATE: weekData.toDate,
+        DEPT_DEPLOYED: weekData.deptDeployed,
+        HOURS_THIS_WEEK: weekData.hoursThisWeek,
+        SUPERVISOR_NAME: weekData.supervisorName,
+        TOTAL_HOURS: weekData.totalHoursCompleted,
+        REQUIRED_HOURS: weekData.totalRequiredHours,
+        PREPARED_DATE: weekData.preparedDate,
+        SUPERVISOR_DATE: weekData.supervisorDate
+      };
+
+      weekData.days.forEach((day, dayIndex) => {
+        const dayNumber = dayIndex + 1;
+        tokens[`D${dayNumber}_DATE`] = day.date;
+        tokens[`D${dayNumber}_TIME_IN`] = day.timeIn;
+        tokens[`D${dayNumber}_TIME_OUT`] = day.timeOut;
+        tokens[`D${dayNumber}_HOURS`] = day.hoursWorked;
+
+        day.tasks.forEach((task, taskIndex) => {
+          const taskNumber = taskIndex + 1;
+          tokens[`D${dayNumber}_T${taskNumber}_DESC`] = task.description;
+          tokens[`D${dayNumber}_T${taskNumber}_HRS`] = task.hoursSpent;
+          tokens[`D${dayNumber}_T${taskNumber}_STATUS`] = task.status;
+        });
+      });
+
+      return tokens;
+    }
+
+    function replaceTokens(source, tokenMap) {
+      return source.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, token) => xmlEscape(tokenMap[token] ?? ""));
+    }
+
+    function uniquifyWeekFragment(fragment, weekIndex) {
+      let paragraphCounter = 0;
+      let bookmarkCounter = 0;
+      let docPrCounter = 0;
+      const baseParagraph = (weekIndex + 1) * 0x1000;
+      const baseBookmark = (weekIndex + 1) * 100;
+      const baseDocPr = (weekIndex + 1) * 1000;
+
+      let updated = fragment.replace(/w14:paraId="[0-9A-F]{8}"/g, () => {
+        paragraphCounter += 1;
+        return `w14:paraId="${(baseParagraph + paragraphCounter).toString(16).toUpperCase().padStart(8, "0")}"`;
+      });
+
+      updated = updated.replace(/(<w:bookmarkStart[^>]*?w:id=")\d+("[^>]*>)/g, (_, prefix, suffix) => {
+        bookmarkCounter += 1;
+        return `${prefix}${baseBookmark + bookmarkCounter}${suffix}`;
+      });
+
+      updated = updated.replace(/(<w:bookmarkEnd[^>]*?w:id=")\d+("[^>]*>)/g, (_, prefix, suffix) => {
+        return `${prefix}${baseBookmark + bookmarkCounter}${suffix}`;
+      });
+
+      updated = updated.replace(/(<wp:docPr[^>]*?id=")\d+("[^>]*>)/g, (_, prefix, suffix) => {
+        docPrCounter += 1;
+        return `${prefix}${baseDocPr + docPrCounter}${suffix}`;
+      });
+
+      return updated;
+    }
+
+    function decodeBase64ToUint8Array(base64) {
+      const clean = base64.replace(/\s+/g, "");
+      const binary = atob(clean);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      return bytes;
+    }
+
+    function buildDocumentXml(templateXml, weeks) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(templateXml, "application/xml");
+      const parserError = xmlDoc.querySelector("parsererror");
+      if (parserError) {
+        throw new Error("Template XML could not be parsed.");
+      }
+
+      const body = xmlDoc.getElementsByTagNameNS("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "body")[0];
+      if (!body) {
+        throw new Error("Unable to locate the Word document body in template.xml.");
+      }
+
+      const serializer = new XMLSerializer();
+      const sectionNode = Array.from(body.childNodes).find((node) => node.nodeType === Node.ELEMENT_NODE && node.localName === "sectPr");
+      if (!sectionNode) {
+        throw new Error("Unable to locate section properties in template.xml.");
+      }
+
+      const bodyFragment = Array.from(body.childNodes)
+        .filter((node) => node !== sectionNode)
+        .map((node) => serializer.serializeToString(node))
+        .join("");
+
+      const xmlDeclaration = templateXml.match(/^<\?xml[^>]*\?>/i)?.[0] ?? '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+      const documentOpenTag = templateXml.match(/<w:document\b[^>]*>/)?.[0];
+      if (!documentOpenTag) {
+        throw new Error("Unable to locate the Word document root element.");
+      }
+
+      const sectionProperties = serializer.serializeToString(sectionNode);
+      const pageBreak = '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+      const weekBodies = weeks.map((week, weekIndex) => {
+        const replaced = replaceTokens(bodyFragment, buildTokenMap(week));
+        return uniquifyWeekFragment(replaced, weekIndex);
+      });
+
+      return `${xmlDeclaration}${documentOpenTag}<w:body>${weekBodies.join(pageBreak)}${sectionProperties}</w:body></w:document>`;
+    }
+
+    async function generateDocument() {
+      const parsed = validateJson(false);
+      if (!parsed) return;
+
+      const generationData = normalizeForGeneration(parsed);
+      generateButton.disabled = true;
+      setStatus("Generating DOCX from embedded template…");
+
+      try {
+        const templateBytes = decodeBase64ToUint8Array(TEMPLATE_DOCX_BASE64);
+        const zip = await JSZip.loadAsync(templateBytes.buffer);
+        const documentFile = zip.file("word/document.xml");
+        if (!documentFile) {
+          throw new Error("word/document.xml was not found in the embedded template.");
+        }
+
+        const templateXml = await documentFile.async("string");
+        const finalXml = buildDocumentXml(templateXml, generationData.weeks);
+        zip.file("word/document.xml", finalXml);
+
+        const outputBlob = await zip.generateAsync({
+          type: "blob",
+          mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        });
+
+        const firstWeekNumber = generationData.weeks[0]?.weekNumber ?? 1;
+        const lastWeekNumber = generationData.weeks[generationData.weeks.length - 1]?.weekNumber ?? firstWeekNumber;
+        const filename = generationData.weeks.length === 1
+          ? `WPR_Week${firstWeekNumber}.docx`
+          : `WPR_Week${firstWeekNumber}-${lastWeekNumber}.docx`;
+
+        const url = URL.createObjectURL(outputBlob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+
+        setStatus(`DOCX generated successfully. Download started for ${filename}.`, "success");
+      } catch (error) {
+        setStatus(`Generation failed.\n${error.message}`, "error");
+      } finally {
+        generateButton.disabled = false;
+      }
+    }
+
+    weeksEditor.addEventListener("input", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!target.dataset.scope) return;
+      updateStateFromInput(target);
+    });
+
+    weeksEditor.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (!target.classList.contains("remove-week-button")) return;
+      removeWeek(Number(target.dataset.weekIndex));
+    });
+
+    copySampleButton.addEventListener("click", loadSample);
+    addWeekButton.addEventListener("click", addWeek);
+    syncJsonButton.addEventListener("click", () => {
+      syncJsonFromState();
+      setStatus("JSON synchronized from the form editor.", "success");
+    });
+    loadJsonButton.addEventListener("click", loadJsonIntoForm);
+    formatJsonButton.addEventListener("click", formatJson);
+    validateButton.addEventListener("click", () => validateJson(true));
+    generateButton.addEventListener("click", generateDocument);
+
+    renderWeeksEditor();
+    syncJsonFromState();
+  </script>
+</body>
+</html>
