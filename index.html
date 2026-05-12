@@ -77,12 +77,14 @@
     .hero {
       border-radius: 28px;
       overflow: hidden;
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-      gap: 20px;
-      padding: 28px;
-      margin-bottom: 18px;
+      padding: 40px 28px;
+      margin-bottom: 28px;
       position: relative;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     .hero::after {
@@ -112,67 +114,16 @@
     h1 {
       font-size: clamp(2.2rem, 4vw, 3.6rem);
       line-height: 0.98;
-      max-width: 10ch;
+      max-width: 20ch;
       letter-spacing: -0.03em;
     }
 
     .hero p {
-      margin: 14px 0 0;
-      max-width: 70ch;
+      margin: 14px auto 0;
+      max-width: 80ch;
       color: var(--muted);
       font-size: 1.02rem;
       line-height: 1.6;
-    }
-
-    .hero-aside {
-      display: grid;
-      gap: 12px;
-      align-content: start;
-    }
-
-    .metric-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .metric-card {
-      border-radius: var(--radius-lg);
-      padding: 16px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(241,246,255,0.86));
-      border: 1px solid rgba(18, 62, 124, 0.12);
-    }
-
-    .metric-card strong {
-      display: block;
-      margin-bottom: 6px;
-      font: 700 11px/1 Arial, sans-serif;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-
-    .metric-card span {
-      display: block;
-      font-size: 0.98rem;
-      line-height: 1.4;
-      color: var(--ink);
-    }
-
-    .meta-note {
-      padding: 16px;
-      border-radius: var(--radius-lg);
-      background: #0f2d5c;
-      color: #eff5ff;
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-
-    .workspace {
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(380px, 0.8fr);
-      gap: 18px;
-      align-items: start;
     }
 
     .panel {
@@ -208,6 +159,21 @@
       gap: 10px;
     }
 
+    .toolbar-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     button {
       appearance: none;
       border: 1px solid transparent;
@@ -216,6 +182,11 @@
       font: 700 0.95rem/1 Arial, sans-serif;
       cursor: pointer;
       transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+    }
+
+    .btn-large {
+      padding: 14px 24px;
+      font-size: 1.05rem;
     }
 
     button:hover { transform: translateY(-1px); }
@@ -475,7 +446,48 @@
       margin-bottom: 28px;
     }
 
-    .prompt-card {
+    .advanced-editor {
+      background: var(--panel-strong);
+      border-radius: var(--radius-lg);
+      border: 1.5px solid var(--line);
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+    .advanced-summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 20px 24px;
+      font: 700 1.1rem/1 Arial, sans-serif;
+      color: var(--ink);
+      user-select: none;
+    }
+    .advanced-summary::-webkit-details-marker {
+      display: none;
+    }
+    .summary-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chevron {
+      transition: transform 0.2s ease;
+      color: var(--muted);
+    }
+    .advanced-editor[open] .chevron {
+      transform: rotate(180deg);
+    }
+    .advanced-body {
+      padding: 0 24px 24px;
+      border-top: 1px solid var(--line);
+      margin-top: 4px;
+      padding-top: 24px;
+    }
+
+    .step-section {
+      margin-bottom: 28px;
+    }
+
+    .step-card {
       background: var(--panel-strong);
       border-radius: var(--radius-lg);
       border: 1.5px solid var(--line);
@@ -483,15 +495,16 @@
       box-shadow: var(--shadow);
     }
 
-    .prompt-card-header {
+    .step-card-header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 20px;
       margin-bottom: 18px;
+      flex-wrap: wrap;
     }
 
-    .prompt-card-header h2 {
+    .step-card-header h2 {
       margin: 4px 0 6px;
       font-size: 1.2rem;
     }
@@ -530,8 +543,7 @@
       .fields-grid,
       .fields-grid.top-level,
       .day-meta,
-      .task-grid,
-      .metric-grid {
+      .task-grid {
         grid-template-columns: 1fr;
       }
 
@@ -541,6 +553,7 @@
 
       .hero,
       .panel,
+      .step-card,
       .week-card,
       .day-card,
       .task-card {
@@ -552,41 +565,18 @@
 <body>
   <div class="shell">
     <section class="hero">
-      <div>
-        <div class="eyebrow">Template-driven DOCX generator</div>
-        <h1>Weekly Progress Report builder</h1>
-        <p>Generate Microsoft Word weekly progress reports by injecting your values into the original DOCX template XML. The template stays structurally intact, including headers and media, while the browser fills token placeholders and repacks the final <code>.docx</code>.</p>
-      </div>
-      <div class="hero-aside">
-        <div class="metric-grid">
-          <div class="metric-card">
-            <strong>Template</strong>
-            <span>Embedded base64 DOCX, no fetch required</span>
-          </div>
-          <div class="metric-card">
-            <strong>Engine</strong>
-            <span>JSZip + direct XML token substitution</span>
-          </div>
-          <div class="metric-card">
-            <strong>Layout</strong>
-            <span>Original form preserved, 5 days × 3 tasks</span>
-          </div>
-          <div class="metric-card">
-            <strong>Input</strong>
-            <span>Form editor and raw JSON textarea</span>
-          </div>
-        </div>
-        <div class="meta-note">Multi-week reports reuse the same template body and insert a page break between generated weeks before the final DOCX download.</div>
-      </div>
+      <div class="eyebrow">Template-driven DOCX generator</div>
+      <h1>Weekly Progress Report builder</h1>
+      <p>Generate Microsoft Word weekly progress reports by injecting your values into the original DOCX template XML. The template stays structurally intact, including headers and media, while the browser fills token placeholders and repacks the final <code>.docx</code>.</p>
     </section>
 
-    <section class="prompt-section">
-      <div class="prompt-card">
-        <div class="prompt-card-header">
+    <section class="step-section">
+      <div class="step-card">
+        <div class="step-card-header">
           <div>
             <div class="eyebrow">Step 1</div>
-            <h2>Generate your JSON with AI</h2>
-            <p class="panel-intro">Copy the prompt below, paste it into ChatGPT or Claude, then write your weekly notes at the bottom after <strong>"My notes:"</strong>. Paste the JSON output into the editor in Step 2.</p>
+            <h2>Get the AI prompt</h2>
+            <p class="panel-intro">Copy the prompt below, paste it into ChatGPT or Claude, then write your weekly notes at the bottom after <strong>"My notes:"</strong>.</p>
           </div>
           <button id="copyPromptButton" class="primary" type="button">Copy Prompt</button>
         </div>
@@ -666,46 +656,53 @@ My notes:
       </div>
     </section>
 
-    <section class="workspace">
-      <div class="panel">
-        <div class="panel-header">
+    <section class="step-section">
+      <div class="step-card">
+        <div class="step-card-header">
           <div>
-            <h2>Form editor</h2>
-            <p class="panel-intro">Edit one or more weeks visually. Every week always renders 5 day groups with 3 task rows per day in the template.</p>
-          </div>
-          <div class="toolbar">
-            <button id="copySampleButton" class="secondary" type="button">Load sample</button>
-            <button id="addWeekButton" class="ghost" type="button">Add week</button>
-            <button id="syncJsonButton" class="ghost" type="button">Sync form → JSON</button>
-            <button id="generateButton" class="primary" type="button">Generate DOCX</button>
+            <div class="eyebrow">Step 2</div>
+            <h2>Paste your JSON</h2>
+            <p class="panel-intro">Paste the JSON from your AI chat below. Then click Generate DOCX.</p>
           </div>
         </div>
-
-        <div id="weeksEditor" class="weeks-stack"></div>
+        <textarea id="jsonInput" class="json-textarea" style="min-height: 340px;" spellcheck="false" aria-label="Weekly progress report JSON"></textarea>
+        <div class="toolbar-bottom">
+          <div class="toolbar-left">
+            <button id="copySampleButton" class="ghost" type="button">Load example JSON</button>
+            <button id="formatJsonButton" class="ghost" type="button">Format</button>
+          </div>
+          <div class="toolbar-right">
+            <button id="generateButton" class="primary btn-large" type="button">⬇ Generate DOCX</button>
+          </div>
+        </div>
         <div id="status" class="status">Ready.</div>
       </div>
+    </section>
 
-      <aside class="panel json-card">
-        <div class="panel-header">
-          <div>
-            <h2>JSON input</h2>
-            <p class="json-help">Paste JSON directly, validate it, then load it back into the form or generate the DOCX from the textarea.</p>
+    <section class="step-section">
+      <details class="advanced-editor">
+        <summary class="advanced-summary">
+          <div class="summary-content">
+            <span class="summary-title">Advanced — Edit week data manually</span>
+            <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </div>
-          <div class="toolbar-secondary">
-            <button id="loadJsonButton" class="secondary" type="button">Load JSON → Form</button>
-            <button id="formatJsonButton" class="ghost" type="button">Format</button>
-            <button id="validateButton" class="ghost" type="button">Validate</button>
+        </summary>
+        <div class="advanced-body">
+          <div class="panel" style="box-shadow: none; border: none; padding: 0;">
+            <div class="panel-header">
+              <div>
+                <h2>Form editor</h2>
+                <p class="panel-intro">Edit one or more weeks visually. Every week always renders 5 day groups with 3 task rows per day in the template.</p>
+              </div>
+              <div class="toolbar">
+                <button id="loadSampleDataBtn" class="secondary" type="button">Load sample data</button>
+                <button id="addWeekButton" class="ghost" type="button">Add week</button>
+              </div>
+            </div>
+            <div id="weeksEditor" class="weeks-stack"></div>
           </div>
         </div>
-        <textarea id="jsonInput" class="json-textarea" spellcheck="false" aria-label="Weekly progress report JSON"></textarea>
-        <p class="legend">Required week fields: department, weekNumber, internName, company, deptDeployed, supervisorName, fromDate, toDate, hoursThisWeek, totalHoursCompleted, totalRequiredHours, workSchedule, preparedDate, supervisorDate. Empty task rows are allowed.</p>
-        <ul class="list">
-          <li>Each week is normalized to exactly 5 days.</li>
-          <li>Each day is normalized to exactly 3 task rows.</li>
-          <li>Special XML characters are escaped before token injection.</li>
-          <li>Generation fails fast if required fields are missing.</li>
-        </ul>
-      </aside>
+      </details>
     </section>
   </div>
 
@@ -13459,11 +13456,9 @@ ABQAKgUAAO1QEQAAAA==`;
       });
     });
     const addWeekButton = document.getElementById("addWeekButton");
-    const syncJsonButton = document.getElementById("syncJsonButton");
-    const loadJsonButton = document.getElementById("loadJsonButton");
     const formatJsonButton = document.getElementById("formatJsonButton");
-    const validateButton = document.getElementById("validateButton");
     const generateButton = document.getElementById("generateButton");
+    const loadSampleDataBtn = document.getElementById("loadSampleDataBtn");
 
     let state = normalizeRoot(sampleData);
     let activeWeekIndex = 0;
@@ -14044,14 +14039,9 @@ ABQAKgUAAO1QEQAAAA==`;
     });
 
     copySampleButton.addEventListener("click", loadSample);
+    if (loadSampleDataBtn) loadSampleDataBtn.addEventListener("click", loadSample);
     addWeekButton.addEventListener("click", addWeek);
-    syncJsonButton.addEventListener("click", () => {
-      syncJsonFromState();
-      setStatus("JSON synchronized from the form editor.", "success");
-    });
-    loadJsonButton.addEventListener("click", loadJsonIntoForm);
     formatJsonButton.addEventListener("click", formatJson);
-    validateButton.addEventListener("click", () => validateJson(true));
     generateButton.addEventListener("click", generateDocument);
 
     renderWeeksEditor();
